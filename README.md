@@ -122,7 +122,7 @@ Perfect for:
 
 ```bash
 # Clone the repository
-git clone https://github.com/brightrex/subnet.git
+git clone https://github.com/sujithvarmap/subnet.git
 cd subnet
 
 # Install dependencies
@@ -143,7 +143,7 @@ flutter build ios --release
 
 ### Download APK
 
-Get the latest prebuilt APK from [Releases](https://github.com/brightrex/subnet/releases):
+Get the latest prebuilt APK from [Releases](https://github.com/sujithvarmap/subnet/releases):
 
 ```
 release_assets/Subnet-v1.0.0.apk
@@ -372,9 +372,9 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 ## 📞 Support & Contact
 
 - **Email**: contactsubnet@gmail.com
-- **Issues**: [GitHub Issues](https://github.com/brightrex/subnet/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/brightrex/subnet/discussions)
-- **Developer**: [@brightrex](https://github.com/brightrex)
+- **Issues**: [GitHub Issues](https://github.com/sujithvarmap/subnet/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/sujithvarmap/subnet/discussions)
+- **Developer**: [@sujithvarmap](https://github.com/sujithvarmap)
 
 ---
 
@@ -570,7 +570,7 @@ contactsubnet@gmail.com
 Developer:
 
 ```text
-https://github.com/brightrex
+https://github.com/sujithvarmap
 ```
 
 ## License
