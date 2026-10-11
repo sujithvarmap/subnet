@@ -22,11 +22,7 @@ class TcpMessagingService {
     _serverSocket = await ServerSocket.bind(InternetAddress.anyIPv4, port);
     _serverSocket!.listen((Socket client) {
       _registerSocket(client);
-      client.listen(
-        (data) => _handleData(data, client),
-        onError: (err) => _removeClient(client),
-        onDone: () => _removeClient(client),
-      );
+      _listenToSocket(client);
     });
   }
 
@@ -34,11 +30,7 @@ class TcpMessagingService {
     try {
       final socket = await Socket.connect(ipAddress, port);
       _registerSocket(socket, ipAddress: ipAddress);
-      socket.listen(
-        (data) => _handleData(data, socket),
-        onError: (err) => _removeClient(socket),
-        onDone: () => _removeClient(socket),
-      );
+      _listenToSocket(socket);
     } catch (e) {
       _messageController.add({
         'type': 'system',
@@ -51,10 +43,27 @@ class TcpMessagingService {
     }
   }
 
-  void _handleData(List<int> data, Socket sourceSocket) {
+  // Messages are newline-delimited JSON. TCP may merge or split writes, so
+  // incoming bytes are decoded as a stream and re-split on newlines.
+  void _listenToSocket(Socket socket) {
+    socket
+        .cast<List<int>>()
+        .transform(utf8.decoder)
+        .transform(const LineSplitter())
+        .listen(
+          (line) => _handleLine(line, socket),
+          onError: (err) => _removeClient(socket),
+          onDone: () => _removeClient(socket),
+        );
+  }
+
+  List<int> _encodeMessage(Map<String, dynamic> message) =>
+      utf8.encode('${jsonEncode(message)}\n');
+
+  void _handleLine(String line, Socket sourceSocket) {
+    if (line.trim().isEmpty) return;
     try {
-      final decoded = utf8.decode(data);
-      final jsonMsg = jsonDecode(decoded) as Map<String, dynamic>;
+      final jsonMsg = jsonDecode(line) as Map<String, dynamic>;
       jsonMsg['sourceIp'] = sourceSocket.remoteAddress.address;
       _messageController.add(jsonMsg);
 
@@ -64,7 +73,7 @@ class TcpMessagingService {
         return;
       }
       if (type == 'message' || type == 'report' || type == 'space_closed') {
-        _broadcastData(data, sourceSocket); // broadcast to others
+        _broadcastData(utf8.encode('$line\n'), sourceSocket); // broadcast to others
       }
     } catch (e) {
       _messageController.add({
@@ -91,26 +100,21 @@ class TcpMessagingService {
   }
 
   void broadcastMessage(Map<String, dynamic> message) {
-    final data = utf8.encode(jsonEncode(message));
-    _broadcastData(data);
+    _broadcastData(_encodeMessage(message));
     _messageController.add(message);
   }
 
   Future<void> sendToPeer(String ipAddress, Map<String, dynamic> message) async {
     final socket = _peerSockets[ipAddress];
     if (socket != null) {
-      socket.add(utf8.encode(jsonEncode(message)));
+      socket.add(_encodeMessage(message));
       return;
     }
 
     final newSocket = await Socket.connect(ipAddress, port);
     _registerSocket(newSocket, ipAddress: ipAddress);
-    newSocket.listen(
-      (data) => _handleData(data, newSocket),
-      onError: (err) => _removeClient(newSocket),
-      onDone: () => _removeClient(newSocket),
-    );
-    newSocket.add(utf8.encode(jsonEncode(message)));
+    _listenToSocket(newSocket);
+    newSocket.add(_encodeMessage(message));
   }
 
   Future<String> sendChatRequest({
